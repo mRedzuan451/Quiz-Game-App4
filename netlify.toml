@@ -1,0 +1,24 @@
+# netlify.toml
+[build]
+  publish = "." # This tells Netlify to publish the current directory
+  # This command will copy script.js to a temporary location,
+  # perform the environment variable replacements, and then overwrite the original script.js.
+  # This ensures the deployed script.js contains the actual keys.
+  command = "cp script.js temp_script.js && \
+             sed -i 's|@@FIREBASE_API_KEY@@|'$VUE_APP_FIREBASE_API_KEY'|g' temp_script.js && \
+             sed -i 's|@@FIREBASE_AUTH_DOMAIN@@|'$VUE_APP_FIREBASE_AUTH_DOMAIN'|g' temp_script.js && \
+             sed -i 's|@@FIREBASE_PROJECT_ID@@|'$VUE_APP_FIREBASE_PROJECT_ID'|g' temp_script.js && \
+             sed -i 's|@@FIREBASE_STORAGE_BUCKET@@|'$VUE_APP_FIREBASE_STORAGE_BUCKET'|g' temp_script.js && \
+             sed -i 's|@@FIREBASE_MESSAGING_SENDER_ID@@|'$VUE_APP_FIREBASE_MESSAGING_SENDER_ID'|g' temp_script.js && \
+             sed -i 's|@@FIREBASE_APP_ID@@|'$VUE_APP_FIREBASE_APP_ID'|g' temp_script.js && \
+             mv temp_script.js script.js"
+
+# You still need to define these variables in Netlify UI under Site settings > Build & deploy > Environment variables
+# The values here are just for reference in the toml file, the actual values come from the Netlify UI.
+[context.production.environment]
+  VUE_APP_FIREBASE_API_KEY = "dummy_key"
+  VUE_APP_FIREBASE_AUTH_DOMAIN = "dummy_auth_domain"
+  VUE_APP_FIREBASE_PROJECT_ID = "dummy_project_id"
+  VUE_APP_FIREBASE_STORAGE_BUCKET = "dummy_storage_bucket"
+  VUE_APP_FIREBASE_MESSAGING_SENDER_ID = "dummy_messaging_sender_id"
+  VUE_APP_FIREBASE_APP_ID = "dummy_app_id"

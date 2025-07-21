@@ -1,0 +1,8 @@
+# .gitignore
+# For this simple project, you likely don't have sensitive files to ignore in the repo,
+# as env vars are managed by Netlify directly.
+# But for typical projects, you'd add:
+# .env
+# node_modules/
+# dist/
+# build/
