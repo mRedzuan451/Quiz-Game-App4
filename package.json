@@ -1,0 +1,16 @@
+{
+  "name": "quiz-game-app",
+  "version": "1.0.0",
+  "description": "Multiplayer Quiz Game",
+  "main": "script.js",
+  "scripts": {
+    "netlify-build": "node build-vars.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "fs": "0.0.1-security",
+    "path": "^0.12.7"
+  }
+}
