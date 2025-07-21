@@ -1,9 +1,9 @@
 # netlify.toml
+
 [build]
   publish = "." # This tells Netlify to publish the current directory
-  # This command will copy script.js to a temporary location,
-  # perform the environment variable replacements, and then overwrite the original script.js.
-  # This ensures the deployed script.js contains the actual keys.
+  # The 'command' property should be a single string for Netlify.
+  # Use '&&' to chain multiple commands and '\' for line continuation for readability.
   command = "cp script.js temp_script.js && \
              sed -i 's|@@FIREBASE_API_KEY@@|'$VUE_APP_FIREBASE_API_KEY'|g' temp_script.js && \
              sed -i 's|@@FIREBASE_AUTH_DOMAIN@@|'$VUE_APP_FIREBASE_AUTH_DOMAIN'|g' temp_script.js && \
@@ -14,7 +14,7 @@
              mv temp_script.js script.js"
 
 # You still need to define these variables in Netlify UI under Site settings > Build & deploy > Environment variables
-# The values here are just for reference in the toml file, the actual values come from the Netlify UI.
+# The values below are dummy placeholders; actual values come from the Netlify UI.
 [context.production.environment]
   VUE_APP_FIREBASE_API_KEY = "dummy_key"
   VUE_APP_FIREBASE_AUTH_DOMAIN = "dummy_auth_domain"
