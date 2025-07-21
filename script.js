@@ -2,16 +2,18 @@
 
 // Firebase Configuration (Replace with your actual config)
 const firebaseConfig = {
-    apiKey: "__firebase_config_api_key",
-    authDomain: "__firebase_config_auth_domain",
-    projectId: "__firebase_config_project_id",
-    storageBucket: "__firebase_config_storage_bucket",
-    messagingSenderId: "__firebase_config_messaging_sender_id",
-    appId: "__app_id",
-    measurementId: "__firebase_config_measurement_id" // Optional
+    apiKey: process.env.VUE_APP_FIREBASE_API_KEY,
+    authDomain: process.env.VUE_APP_FIREBASE_AUTH_DOMAIN,
+    projectId: process.env.VUE_APP_FIREBASE_PROJECT_ID,
+    storageBucket: process.env.VUE_APP_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: process.env.VUE_APP_FIREBASE_MESSAGING_SENDER_ID,
+    appId: process.env.VUE_APP_FIREBASE_APP_ID,
+    // measurementId: process.env.VUE_APP_FIREBASE_MEASUREMENT_ID // Optional
 };
 
 // Initialize Firebase
+// Ensure that the Firebase SDKs are loaded via <script> tags in index.html as shown previously
+// or dynamically import them if you prefer a module-based approach.
 if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
 } else {
