@@ -1,0 +1,157 @@
+/* style.css */
+
+/* Custom CSS variables for theming */
+:root {
+    --bg-color: #f3f4f6; /* Neutral light gray */
+    --text-color: #1f2937; /* Neutral dark gray */
+    --primary-button-bg: #4f46e5;
+    --primary-button-text: #ffffff;
+    --secondary-button-bg: #6b7280;
+    --secondary-button-text: #ffffff;
+    --card-bg: #ffffff;
+    --border-color: #e5e7eb;
+}
+
+/* Adult Theme */
+body.theme-adult {
+    --bg-color: #1a202c; /* Dark charcoal */
+    --text-color: #e2e8f0; /* Light gray */
+    --primary-button-bg: #6366f1; /* Indigo */
+    --primary-button-text: #ffffff;
+    --secondary-button-bg: #4a5568; /* Darker gray */
+    --secondary-button-text: #cbd5e0;
+    --card-bg: #2d3748; /* Darker gray card */
+    --border-color: #4a5568;
+}
+
+/* Kids Theme */
+body.theme-kids {
+    --bg-color: #fef3c7; /* Light yellow */
+    --text-color: #3f1d5e; /* Dark purple */
+    --primary-button-bg: #f97316; /* Orange */
+    --primary-button-text: #ffffff;
+    --secondary-button-bg: #a78bfa; /* Light purple */
+    --secondary-button-text: #ffffff;
+    --card-bg: #ffffff;
+    --border-color: #fcd34d; /* Yellow border */
+}
+
+/* Apply CSS variables */
+body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-family: 'Inter', sans-serif;
+}
+
+/* General button styling */
+button {
+    transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
+}
+
+button:hover {
+    transform: translateY(-1px);
+}
+
+/* Card styling */
+.bg-white {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out;
+}
+
+/* Specific button overrides for theming */
+#create-game-btn,
+#join-game-btn,
+#start-game-btn,
+#next-question-btn,
+#toggle-pause-btn,
+#show-leaderboard-btn,
+#end-game-btn,
+#play-again-btn,
+#return-home-btn {
+    background-color: var(--primary-button-bg);
+    color: var(--primary-button-text);
+}
+
+#create-game-btn:hover,
+#join-game-btn:hover,
+#start-game-btn:hover,
+#next-question-btn:hover,
+#toggle-pause-btn:hover,
+#show-leaderboard-btn:hover,
+#end-game-btn:hover,
+#play-again-btn:hover,
+#return-home-btn:hover {
+    filter: brightness(1.1); /* Slightly brighter on hover */
+}
+
+#leave-lobby-btn,
+#signout-btn {
+    background-color: var(--secondary-button-bg);
+    color: var(--secondary-button-text);
+}
+
+#leave-lobby-btn:hover,
+#signout-btn:hover {
+    filter: brightness(1.1);
+}
+
+/* Answer button styling */
+.answer-button {
+    @apply bg-blue-500 text-white font-bold py-4 px-6 rounded-lg text-xl hover:bg-blue-600 transition duration-200 ease-in-out;
+    background-color: var(--primary-button-bg); /* Use primary button color for answers */
+    color: var(--primary-button-text);
+}
+
+.answer-button.correct {
+    @apply bg-green-500 hover:bg-green-600;
+}
+
+.answer-button.incorrect {
+    @apply bg-red-500 hover:bg-red-600;
+}
+
+/* Input field styling */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+select {
+    border-color: var(--border-color);
+    background-color: var(--card-bg);
+    color: var(--text-color);
+    transition: border-color 0.2s ease-in-out, background-color 0.2s ease-in-out;
+}
+
+input:focus, select:focus {
+    outline: none;
+    border-color: var(--primary-button-bg);
+    box-shadow: 0 0 0 2px rgba(var(--primary-button-bg-rgb, 79, 70, 229), 0.25);
+}
+
+/* Specific to Kids mode elements for extra fun */
+body.theme-kids #question-text,
+body.theme-kids .leaderboard-item {
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+}
+
+body.theme-kids .answer-button {
+    border: 2px solid var(--border-color);
+    box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+}
+
+/* Leaderboard specific styles */
+.leaderboard-item {
+    @apply flex justify-between items-center bg-gray-100 p-3 rounded-md text-gray-800 font-semibold;
+    background-color: var(--border-color); /* Lighter version of border color */
+    color: var(--text-color);
+    transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+}
+
+/* Make hidden elements truly hidden with display: none for transitions */
+.hidden {
+    display: none !important;
+}
+
+.transition-opacity {
+    transition: opacity 0.5s ease-in-out;
+}

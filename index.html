@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multiplayer Quiz Game</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="font-inter antialiased transition-colors duration-500 ease-in-out">
+    <div id="app" class="min-h-screen flex flex-col items-center justify-center p-4">
+
+        <div id="auth-section" class="bg-white p-8 rounded-lg shadow-xl w-full max-w-md text-center transition-opacity duration-500 ease-in-out opacity-100 block">
+            <h1 class="text-3xl font-bold mb-6 text-gray-800">Welcome to Quiz Master!</h1>
+
+            <div class="mb-4">
+                <button id="google-signin-btn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center w-full mb-2 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/2048px-Google_%22G%22_logo.svg.png" alt="Google logo" class="w-5 h-5 mr-2"> Sign in with Google
+                </button>
+                <input type="email" id="email-input" placeholder="Email" class="p-2 border border-gray-300 rounded-lg w-full mb-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">
+                <input type="password" id="password-input" placeholder="Password" class="p-2 border border-gray-300 rounded-lg w-full mb-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">
+                <button id="email-signup-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg w-full mb-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">Sign Up with Email</button>
+                <button id="email-signin-btn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg w-full mb-4 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50">Sign In with Email</button>
+                <button id="anonymous-signin-btn" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50">Continue Anonymously</button>
+            </div>
+            <p id="auth-error" class="text-red-500 text-sm mb-4"></p>
+
+            <div id="user-info" class="mb-4 hidden">
+                <p>Logged in as: <span id="user-display-name" class="font-semibold"></span> (<span id="user-uid"></span>)</p>
+                <button id="signout-btn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-1 px-3 rounded-lg mt-2 text-sm">Sign Out</button>
+            </div>
+
+            <hr class="my-6 border-gray-200">
+
+            <div id="game-options" class="hidden">
+                <button id="create-game-btn" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-3 px-6 rounded-lg mb-4 w-full text-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50">Create New Game</button>
+                <div class="mb-4">
+                    <input type="text" id="game-id-input" placeholder="Enter Game ID" class="p-3 border border-gray-300 rounded-lg w-full mb-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">
+                    <input type="text" id="player-name-input" placeholder="Enter Your Name" class="p-3 border border-gray-300 rounded-lg w-full mb-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">
+                    <button id="join-game-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg w-full text-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">Join Existing Game</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="lobby-section" class="hidden bg-white p-8 rounded-lg shadow-xl w-full max-w-2xl text-center transition-opacity duration-500 ease-in-out opacity-0 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+            <h2 class="text-3xl font-bold mb-4 text-gray-800">Game Lobby</h2>
+            <p class="text-lg mb-4 text-gray-600">Game ID: <span id="lobby-game-id" class="font-semibold text-purple-600"></span></p>
+            <p class="text-lg mb-6 text-gray-600">Share this ID with your friends!</p>
+
+            <h3 class="text-2xl font-semibold mb-3 text-gray-700">Players in Lobby:</h3>
+            <ul id="players-in-lobby" class="list-disc list-inside mb-6 text-left max-h-48 overflow-y-auto bg-gray-50 p-4 rounded-lg">
+                </ul>
+
+            <div id="game-master-controls-lobby" class="hidden">
+                <h3 class="text-2xl font-semibold mb-3 text-gray-700">Game Settings</h3>
+                <div class="mb-4">
+                    <label for="game-mode-select" class="block text-lg font-medium text-gray-700 mb-2">Select Game Mode:</label>
+                    <select id="game-mode-select" class="p-3 border border-gray-300 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50">
+                        <option value="adult">Adult Mode</option>
+                        <option value="kids">Kids Mode</option>
+                    </select>
+                </div>
+                <div class="mb-6">
+                    <label for="display-mode-select" class="block text-lg font-medium text-gray-700 mb-2">Select Display Mode:</label>
+                    <select id="display-mode-select" class="p-3 border border-gray-300 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50">
+                        <option value="shared">Shared Screen (Host + Player Phones)</option>
+                        <option value="individual">Individual Screen (All Player Phones)</option>
+                    </select>
+                </div>
+                <button id="start-game-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-lg text-xl w-full focus:outline-none focus:ring-2 focus:ring-green-600 focus:ring-opacity-50">Start Game</button>
+            </div>
+            <button id="leave-lobby-btn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg mt-4">Leave Lobby</button>
+        </div>
+
+        <div id="game-section" class="hidden w-full max-w-4xl transition-opacity duration-500 ease-in-out opacity-0 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+            <div id="question-area" class="bg-white p-8 rounded-lg shadow-xl mb-6">
+                <p id="question-number" class="text-xl font-semibold mb-4 text-gray-600"></p>
+                <h2 id="question-text" class="text-3xl font-bold mb-6 text-gray-800"></h2>
+                <div id="answers-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    </div>
+                <div id="feedback-area" class="text-center mt-6 text-lg font-semibold"></div>
+                <p id="current-player-score" class="text-xl font-semibold text-right mt-4 text-gray-700 hidden">Your Score: <span id="player-score-value">0</span></p>
+            </div>
+
+            <div id="game-master-controls-game" class="hidden bg-white p-6 rounded-lg shadow-xl text-center mb-6">
+                <h3 class="text-2xl font-bold mb-4 text-gray-800">Game Master Controls</h3>
+                <button id="next-question-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg mr-4 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-opacity-50">Next Question</button>
+                <button id="toggle-pause-btn" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-3 px-6 rounded-lg mr-4 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-opacity-50">Pause Game</button>
+                <button id="show-leaderboard-btn" class="bg-teal-500 hover:bg-teal-600 text-white font-bold py-3 px-6 rounded-lg mr-4 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-opacity-50">Show Leaderboard</button>
+                <button id="end-game-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-600 focus:ring-opacity-50">End Game</button>
+            </div>
+
+            <div id="leaderboard-section" class="hidden bg-white p-6 rounded-lg shadow-xl">
+                <h3 class="text-2xl font-bold mb-4 text-gray-800 text-center">Leaderboard</h3>
+                <ul id="leaderboard-list" class="space-y-2">
+                    </ul>
+            </div>
+        </div>
+
+        <div id="game-over-section" class="hidden bg-white p-8 rounded-lg shadow-xl w-full max-w-md text-center transition-opacity duration-500 ease-in-out opacity-0 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+            <h2 class="text-3xl font-bold mb-6 text-gray-800">Game Over!</h2>
+            <h3 class="text-2xl font-semibold mb-4 text-gray-700">Final Scores:</h3>
+            <ul id="final-leaderboard-list" class="list-none space-y-2 mb-6 text-lg">
+                </ul>
+            <button id="play-again-btn" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg text-lg mr-4">Play Again</button>
+            <button id="return-home-btn" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-6 rounded-lg text-lg">Return Home</button>
+        </div>
+
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+
+    <script src="script.js"></script>
+</body>
+</html>
