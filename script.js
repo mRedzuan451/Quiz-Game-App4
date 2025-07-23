@@ -744,10 +744,16 @@ function renderUI(gameState) {
 
         // Fetch the current question from Firestore if it's the Game Master or in Individual mode
         if (isGameMaster || displayMode === 'individual') {
-            db.collection('games').doc(currentGameId).collection('questions').doc(`q${currentQuestionIndex}`).get()
+            const questionIndexAtCall = currentQuestionIndex; // Capture the index
+            const modeAtCall = mode; // Capture the mode
+            const playersAtCall = players; // Capture players
+            const currentPlayerIdAtCall = currentPlayerId; // Capture current player ID
+
+            db.collection('games').doc(currentGameId).collection('questions').doc(`q${questionIndexAtCall}`).get()
                 .then(questionDoc => {
                     if (questionDoc.exists) {
-                        displayQuestion(questionDoc.data(), displayMode, players, currentPlayerId);
+                        // Pass currentQuestionIndex explicitly as questionNumber
+                        displayQuestion(questionDoc.data(), displayMode, players, currentPlayerId, questionIndexAtCall);
                     } else {
                         questionTextElem.textContent = "Loading question...";
                         answersContainer.innerHTML = '';
@@ -786,7 +792,29 @@ function renderUI(gameState) {
                 });
                 // Show feedback if the player has answered
                 const playerAnswer = players[currentPlayerId]?.lastAnswer;
-                if (playerAnswer !== null) {
+                if (currentQuestion) {
+                // Call displayQuestion for players in shared mode with explicit question data/number
+                // Note: displayQuestion expects the full question object, not just options
+                // This else block's logic for players in shared screen mode needs a slight refactor
+                // to properly use displayQuestion or to have its own simplified display.
+                // For now, let's just make sure the `sampleQuestions` access is safe.
+                if (currentQuestionIndex !== -1 && sampleQuestions[mode] && sampleQuestions[mode][currentQuestionIndex]) {
+                    const playerQuestionData = sampleQuestions[mode][currentQuestionIndex];
+                    displayQuestion(playerQuestionData, displayMode, players, currentPlayerId, currentQuestionIndex);
+                    // Adjusting the display for shared screen mode if displayQuestion is comprehensive
+                    // The current if/else logic might be slightly redundant if displayQuestion handles all
+                    // aspects including hiding things for shared mode player phones.
+                } else {
+                    questionTextElem.textContent = "Look at the Game Master's screen for the question!";
+                    answersContainer.innerHTML = ''; // Clear options from player's phone by default
+                    feedbackArea.textContent = '';
+                    currentPlayerScoreElem.classList.remove('hidden');
+                    playerScoreValueElem.textContent = players[currentPlayerId]?.score || 0;
+                }
+
+                // Existing logic to show feedback/buttons if playerAnswer is not null
+                const playerAnswer = players[currentPlayerId]?.lastAnswer;
+                if (playerAnswer !== null && currentQuestion) { // Ensure currentQuestion is defined
                     if (playerAnswer === currentQuestion.correctAnswer) {
                         feedbackArea.textContent = "Correct!";
                         feedbackArea.className = 'text-center mt-6 text-lg font-semibold text-green-600';
@@ -794,15 +822,14 @@ function renderUI(gameState) {
                         feedbackArea.textContent = `Incorrect! Correct answer was: ${currentQuestion.correctAnswer}`;
                         feedbackArea.className = 'text-center mt-6 text-lg font-semibold text-red-600';
                     }
-                    // Disable answer buttons after submission
                     Array.from(answersContainer.children).forEach(btn => btn.disabled = true);
-                } else {
-                    feedbackArea.textContent = '';
+                } else if (currentQuestion) { // Only enable buttons if currentQuestion is available and no answer yet
                     Array.from(answersContainer.children).forEach(btn => btn.disabled = false);
                 }
             }
-        }
 
+        }
+    }
         // Always show leaderboard if GM has enabled it, or if it's Individual mode for all.
         if (leaderboardVisible || displayMode === 'individual') {
             renderLeaderboard(players);
@@ -871,9 +898,11 @@ function updatePauseButtonState(isPaused) {
  * @param {string} displayMode The current display mode ('shared' or 'individual').
  * @param {object} players Object containing player data.
  * @param {string} currentPlayerId The ID of the current player.
+ * @param {number} questionNumber The current question number (passed explicitly to avoid relying on global currentGameState).
  */
-function displayQuestion(question, displayMode, players, currentPlayerId) {
-    questionNumberElem.textContent = `Question ${currentGameState.currentQuestionIndex + 1}`;
+function displayQuestion(question, displayMode, players, currentPlayerId, questionNumber) { // Added questionNumber parameter
+    // Use the passed questionNumber instead of relying on global currentGameState
+    questionNumberElem.textContent = `Question ${questionNumber + 1}`;
     questionTextElem.textContent = question.question;
     answersContainer.innerHTML = '';
     feedbackArea.textContent = ''; // Clear feedback for new question
@@ -908,6 +937,8 @@ function displayQuestion(question, displayMode, players, currentPlayerId) {
             feedbackArea.textContent = `Incorrect! Correct answer was: ${question.correctAnswer}`;
             feedbackArea.className = 'text-center mt-6 text-lg font-semibold text-red-600';
         }
+        // Disable answer buttons after submission
+        Array.from(answersContainer.children).forEach(btn => btn.disabled = true);
     } else {
         // Ensure buttons are enabled if no answer submitted yet
         Array.from(answersContainer.children).forEach(btn => btn.disabled = false);
