@@ -43,7 +43,6 @@
                 <button id="go-to-admin-btn" class="bg-gray-700 hover:bg-gray-800 text-white font-bold py-2 px-4 rounded-lg w-full text-md mt-4 focus:outline-none focus:ring-2 focus:ring-gray-700 focus:ring-opacity-50">Admin: Add Questions</button>
             </div>
         </div>
-
         <div id="lobby-section" class="hidden bg-white p-8 rounded-lg shadow-xl w-full max-w-2xl text-center transition-opacity duration-500 ease-in-out opacity-0 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
             <h2 class="text-3xl font-bold mb-4 text-gray-800">Game Lobby</h2>
             <p class="text-lg mb-4 text-gray-600">Game ID: <span id="lobby-game-id" class="font-semibold text-purple-600"></span></p>
@@ -73,7 +72,6 @@
             </div>
             <button id="leave-lobby-btn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg mt-4">Leave Lobby</button>
         </div>
-
         <div id="game-section" class="hidden w-full max-w-4xl transition-opacity duration-500 ease-in-out opacity-0 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
             <div id="question-area" class="bg-white p-8 rounded-lg shadow-xl mb-6">
                 <p id="question-number" class="text-xl font-semibold mb-4 text-gray-600"></p>
@@ -98,7 +96,6 @@
                     </ul>
             </div>
         </div>
-
         <div id="game-over-section" class="hidden bg-white p-8 rounded-lg shadow-xl w-full max-w-md text-center transition-opacity duration-500 ease-in-out opacity-0 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
             <h2 class="text-3xl font-bold mb-6 text-gray-800">Game Over!</h2>
             <h3 class="text-2xl font-semibold mb-4 text-gray-700">Final Scores:</h3>
@@ -107,7 +104,6 @@
             <button id="play-again-btn" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg text-lg mr-4">Play Again</button>
             <button id="return-home-btn" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-6 rounded-lg text-lg">Return Home</button>
         </div>
-
         <div id="admin-section" class="hidden bg-white p-8 rounded-lg shadow-xl w-full max-w-2xl text-left transition-opacity duration-500 ease-in-out opacity-0 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
             <h2 class="text-3xl font-bold mb-6 text-gray-800 text-center">Admin: Add New Question</h2>
 
@@ -151,13 +147,18 @@
                 <button id="back-to-home-from-admin-btn" class="flex-grow bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-6 rounded-lg text-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50">Back to Home</button>
             </div>
         </div>
-
     </div>
 
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
 
-    <script src="script.js"></script>
+    <script src="js/domElements.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/gameLogic.js"></script>
+    <script src="js/gameUI.js"></script>
+    <script src="js/admin.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/main.js"></script>
 </body>
 </html>
