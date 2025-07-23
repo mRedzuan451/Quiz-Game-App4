@@ -540,7 +540,7 @@ async function nextQuestion() {
                 currentQuestionIndex: -1, // Reset index
                 leaderboardVisible: true // Show final leaderboard
             });
-            console("Game ended!");
+            console.log("Game ended!");
         }
     } catch (error) {
         console.error("Error advancing question:", error);
