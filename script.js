@@ -27,6 +27,7 @@ const authSection = document.getElementById('auth-section');
 const lobbySection = document.getElementById('lobby-section');
 const gameSection = document.getElementById('game-section');
 const gameOverSection = document.getElementById('game-over-section');
+const adminSection = document.getElementById('admin-section'); // NEW
 
 // Auth elements
 const googleSignInBtn = document.getElementById('google-signin-btn');
@@ -41,6 +42,7 @@ const userDisplayName = document.getElementById('user-display-name');
 const userUid = document.getElementById('user-uid');
 const signoutBtn = document.getElementById('signout-btn');
 const gameOptions = document.getElementById('game-options');
+const goToAdminBtn = document.getElementById('go-to-admin-btn'); // NEW
 
 // Lobby elements
 const createGameBtn = document.getElementById('create-game-btn');
@@ -75,6 +77,17 @@ const finalLeaderboardList = document.getElementById('final-leaderboard-list');
 const playAgainBtn = document.getElementById('play-again-btn');
 const returnHomeBtn = document.getElementById('return-home-btn');
 
+// Admin elements (NEW)
+const adminQuestionText = document.getElementById('admin-question-text');
+const adminOptionsContainer = document.getElementById('admin-options-container');
+const addOptionBtn = document.getElementById('add-option-btn');
+const adminCorrectAnswer = document.getElementById('admin-correct-answer');
+const adminGameMode = document.getElementById('admin-game-mode');
+const adminFeedbackMessage = document.getElementById('admin-feedback-message');
+const submitQuestionBtn = document.getElementById('submit-question-btn');
+const backToHomeFromAdminBtn = document.getElementById('back-to-home-from-admin-btn');
+
+
 // --- Global Variables ---
 let currentUser = null;
 let currentGameState = null;
@@ -86,6 +99,8 @@ let gameSubscription = null; // To store the Firestore snapshot listener unsubsc
 let playersSubscription = null; // To store the Firestore snapshot listener for players
 
 // --- Sample Questions (Hardcoded for initial setup) ---
+// Note: These sample questions are used to populate Firestore if empty.
+// When you add questions via the admin page, they will be stored in Firestore's 'questions' collection.
 const sampleQuestions = {
     adult: [
         {
@@ -161,6 +176,7 @@ function hideAllSections() {
     lobbySection.classList.add('hidden', 'opacity-0');
     gameSection.classList.add('hidden', 'opacity-0');
     gameOverSection.classList.add('hidden', 'opacity-0');
+    adminSection.classList.add('hidden', 'opacity-0'); // NEW
 }
 
 /**
@@ -195,10 +211,12 @@ function updateAuthUI() {
         userDisplayName.textContent = currentUser.displayName || (currentUser.isAnonymous ? 'Anonymous User' : currentUser.email || 'Unknown User');
         userUid.textContent = currentUser.uid;
         authSection.querySelector('.mb-4:first-of-type').classList.add('hidden'); // Hide login/signup fields
+        goToAdminBtn.classList.remove('hidden'); // Show admin button if logged in
     } else {
         userInfo.classList.add('hidden');
         gameOptions.classList.add('hidden');
         authSection.querySelector('.mb-4:first-of-type').classList.remove('hidden'); // Show login/signup fields
+        goToAdminBtn.classList.add('hidden'); // Hide admin button if not logged in
     }
     authError.textContent = ''; // Clear any previous errors
 }
@@ -492,20 +510,23 @@ async function startGame() {
  * @param {string} mode 'adult' or 'kids'.
  */
 async function updateGameQuestionsInFirestore(gameId, mode) {
-    const gameQuestionsRef = db.collection('games').doc(gameId).collection('questions');
-    const existingQuestionsSnapshot = await gameQuestionsRef.get();
+    // We'll now store questions in a top-level 'questions' collection, not a subcollection of 'games'.
+    // This allows for a single source of truth for questions.
+    const questionsCollectionRef = db.collection('questions'); // Top-level questions collection
+    const modeQuestionsRef = questionsCollectionRef.where('mode', '==', mode);
 
-    if (existingQuestionsSnapshot.empty || existingQuestionsSnapshot.docs[0].data().mode !== mode) {
-        // If no questions or mode changed, clear and add new ones
+    const existingQuestionsSnapshot = await modeQuestionsRef.get();
+
+    if (existingQuestionsSnapshot.empty) { // Only populate if NO questions exist for this mode
         const batch = db.batch();
-        existingQuestionsSnapshot.docs.forEach(doc => batch.delete(doc.ref));
-
-        sampleQuestions[mode].forEach((q, index) => {
-            const docRef = gameQuestionsRef.doc(`q${index}`); // Use simple doc IDs
-            batch.set(docRef, { ...q, index: index, mode: mode });
+        sampleQuestions[mode].forEach((q) => { // No need for index-based doc IDs if dynamic
+            const docRef = questionsCollectionRef.doc(); // Let Firestore generate unique ID
+            batch.set(docRef, { ...q, mode: mode, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
         });
         await batch.commit();
-        console.log(`Questions for mode '${mode}' added to Firestore for game ${gameId}`);
+        console.log(`Initial sample questions for mode '${mode}' added to Firestore.`);
+    } else {
+        console.log(`Questions for mode '${mode}' already exist in Firestore. Skipping sample data population.`);
     }
 }
 
@@ -516,7 +537,11 @@ async function nextQuestion() {
     if (!isGameMaster || !currentGameState || !currentGameId) return;
 
     let nextIndex = currentGameState.currentQuestionIndex + 1;
-    const questionsCount = sampleQuestions[currentGameState.mode].length; // Assuming questions are already populated
+    const mode = currentGameState.mode;
+
+    // Fetch total number of questions for the current mode from Firestore
+    const questionsCountSnapshot = await db.collection('questions').where('mode', '==', mode).get();
+    const questionsCount = questionsCountSnapshot.size;
 
     try {
         // Clear last answers for all players before moving to next question
@@ -540,7 +565,7 @@ async function nextQuestion() {
                 currentQuestionIndex: -1, // Reset index
                 leaderboardVisible: true // Show final leaderboard
             });
-            console.log("Game ended!");
+            console.log("Game ended!"); // Corrected this line from previous error
         }
     } catch (error) {
         console.error("Error advancing question:", error);
@@ -666,7 +691,20 @@ async function submitAnswer(answer) {
     if (!currentGameId || !currentPlayerId || !currentGameState || currentGameState.paused) return;
 
     const gameRef = db.collection('games').doc(currentGameId);
-    const currentQuestion = sampleQuestions[currentGameState.mode][currentGameState.currentQuestionIndex];
+    // Fetch the specific question by index from the 'questions' collection
+    const questionSnapshot = await db.collection('questions')
+        .where('mode', '==', currentGameState.mode)
+        .orderBy('createdAt') // Assuming you want to order by creation time to get questions by index
+        .limit(currentGameState.currentQuestionIndex + 1)
+        .get();
+
+    const questionsArray = questionSnapshot.docs.map(doc => doc.data());
+    const currentQuestion = questionsArray[currentGameState.currentQuestionIndex]; // Get the question from the fetched array
+
+    if (!currentQuestion) {
+        console.error("Could not find current question for mode:", currentGameState.mode, "index:", currentGameState.currentQuestionIndex);
+        return; // Exit if question not found
+    }
 
     const isCorrect = answer === currentQuestion.correctAnswer;
     let newScore = currentGameState.players[currentPlayerId].score;
@@ -709,7 +747,8 @@ function listenToGameChanges(gameId) {
             // Determine if current user is Game Master
             isGameMaster = (currentGameState.gameMasterId === currentPlayerId);
 
-            // Update questions if mode changes (for GM)
+            // Update questions if mode changes (for GM) - This is now only for initial population
+            // The questions are now loaded dynamically from the 'questions' collection in renderUI/submitAnswer
             if (isGameMaster && currentGameState.gameStatus === 'lobby') {
                 await updateGameQuestionsInFirestore(gameId, currentGameState.mode);
             }
@@ -726,7 +765,7 @@ function listenToGameChanges(gameId) {
  * Renders the UI based on the current game state and user role.
  * @param {object} gameState The current game state object.
  */
-function renderUI(gameState) {
+async function renderUI(gameState) { // Made async to await question fetch
     const { gameStatus, currentQuestionIndex, mode, displayMode, players, leaderboardVisible } = gameState;
 
     applyTheme(mode === 'adult' ? 'adult' : mode === 'kids' ? 'kids' : 'neutral');
@@ -742,94 +781,37 @@ function renderUI(gameState) {
         renderGameMasterControls(isGameMaster);
         updatePauseButtonState(gameState.paused);
 
-        // Fetch the current question from Firestore if it's the Game Master or in Individual mode
-        if (isGameMaster || displayMode === 'individual') {
-            const questionIndexAtCall = currentQuestionIndex; // Capture the index
-            const modeAtCall = mode; // Capture the mode
-            const playersAtCall = players; // Capture players
-            const currentPlayerIdAtCall = currentPlayerId; // Capture current player ID
+        // Fetch the current question from the top-level 'questions' collection
+        if (currentQuestionIndex !== -1 && mode) { // Ensure index is valid and mode is set
+            try {
+                const questionSnapshot = await db.collection('questions')
+                    .where('mode', '==', mode)
+                    .orderBy('createdAt') // Order to ensure consistent indexing
+                    .limit(currentQuestionIndex + 1) // Fetch up to the current question
+                    .get();
 
-            db.collection('games').doc(currentGameId).collection('questions').doc(`q${questionIndexAtCall}`).get()
-                .then(questionDoc => {
-                    if (questionDoc.exists) {
-                        // Pass currentQuestionIndex explicitly as questionNumber
-                        displayQuestion(questionDoc.data(), displayMode, players, currentPlayerId, questionIndexAtCall);
-                    } else {
-                        questionTextElem.textContent = "Loading question...";
-                        answersContainer.innerHTML = '';
-                    }
-                })
-                .catch(error => {
-                    console.error("Error fetching question:", error);
-                    questionTextElem.textContent = "Error loading question.";
-                    answersContainer.innerHTML = '';
-                });
-        } else { // Player in Shared Screen mode
-            // Player's phone shows simplified interface for input
-            questionTextElem.textContent = "Look at the Game Master's screen for the question!";
-            answersContainer.innerHTML = ''; // Clear options from player's phone by default
-            feedbackArea.textContent = '';
-            currentPlayerScoreElem.classList.remove('hidden');
-            playerScoreValueElem.textContent = players[currentPlayerId]?.score || 0;
+                const questionsArray = questionSnapshot.docs.map(doc => doc.data());
+                const currentQuestion = questionsArray[currentQuestionIndex];
 
-            // If Game Master's leaderboard is visible, show it on player's screen too.
-            if (leaderboardVisible) {
-                renderLeaderboard(players);
-                leaderboardSection.classList.remove('hidden');
-            } else {
-                leaderboardSection.classList.add('hidden');
-            }
-
-            // Still need to show answer buttons for the current question
-            const currentQuestion = sampleQuestions[mode][currentQuestionIndex]; // Get from local cache
-            if (currentQuestion) {
-                currentQuestion.options.forEach(option => {
-                    const button = document.createElement('button');
-                    button.textContent = option;
-                    button.className = 'answer-button w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg text-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50';
-                    button.onclick = () => submitAnswer(option);
-                    answersContainer.appendChild(button);
-                });
-                // Show feedback if the player has answered
-                const playerAnswer = players[currentPlayerId]?.lastAnswer;
                 if (currentQuestion) {
-                // Call displayQuestion for players in shared mode with explicit question data/number
-                // Note: displayQuestion expects the full question object, not just options
-                // This else block's logic for players in shared screen mode needs a slight refactor
-                // to properly use displayQuestion or to have its own simplified display.
-                // For now, let's just make sure the `sampleQuestions` access is safe.
-                if (currentQuestionIndex !== -1 && sampleQuestions[mode] && sampleQuestions[mode][currentQuestionIndex]) {
-                    const playerQuestionData = sampleQuestions[mode][currentQuestionIndex];
-                    displayQuestion(playerQuestionData, displayMode, players, currentPlayerId, currentQuestionIndex);
-                    // Adjusting the display for shared screen mode if displayQuestion is comprehensive
-                    // The current if/else logic might be slightly redundant if displayQuestion handles all
-                    // aspects including hiding things for shared mode player phones.
+                    // Pass the question data directly
+                    displayQuestion(currentQuestion, displayMode, players, currentPlayerId, currentQuestionIndex);
                 } else {
-                    questionTextElem.textContent = "Look at the Game Master's screen for the question!";
-                    answersContainer.innerHTML = ''; // Clear options from player's phone by default
-                    feedbackArea.textContent = '';
-                    currentPlayerScoreElem.classList.remove('hidden');
-                    playerScoreValueElem.textContent = players[currentPlayerId]?.score || 0;
+                    questionTextElem.textContent = "Loading question...";
+                    answersContainer.innerHTML = '';
+                    console.warn(`Question at index ${currentQuestionIndex} for mode ${mode} not found.`);
                 }
-
-                // Existing logic to show feedback/buttons if playerAnswer is not null
-                const playerAnswer = players[currentPlayerId]?.lastAnswer;
-                if (playerAnswer !== null && currentQuestion) { // Ensure currentQuestion is defined
-                    if (playerAnswer === currentQuestion.correctAnswer) {
-                        feedbackArea.textContent = "Correct!";
-                        feedbackArea.className = 'text-center mt-6 text-lg font-semibold text-green-600';
-                    } else {
-                        feedbackArea.textContent = `Incorrect! Correct answer was: ${currentQuestion.correctAnswer}`;
-                        feedbackArea.className = 'text-center mt-6 text-lg font-semibold text-red-600';
-                    }
-                    Array.from(answersContainer.children).forEach(btn => btn.disabled = true);
-                } else if (currentQuestion) { // Only enable buttons if currentQuestion is available and no answer yet
-                    Array.from(answersContainer.children).forEach(btn => btn.disabled = false);
-                }
+            } catch (error) {
+                console.error("Error fetching question in renderUI:", error);
+                questionTextElem.textContent = "Error loading question.";
+                answersContainer.innerHTML = '';
             }
-
+        } else {
+            // Handle cases where currentQuestionIndex is -1 or mode is missing for inProgress state
+            questionTextElem.textContent = "Game starting...";
+            answersContainer.innerHTML = '';
         }
-    }
+
         // Always show leaderboard if GM has enabled it, or if it's Individual mode for all.
         if (leaderboardVisible || displayMode === 'individual') {
             renderLeaderboard(players);
@@ -911,23 +893,38 @@ function displayQuestion(question, displayMode, players, currentPlayerId, questi
 
     const playerAnswer = players[currentPlayerId]?.lastAnswer;
 
-    question.options.forEach(option => {
-        const button = document.createElement('button');
-        button.textContent = option;
-        button.className = 'answer-button w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg text-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50';
-        button.onclick = () => submitAnswer(option);
+    // Determine if the current user is a player in shared screen mode
+    const isPlayerInSharedMode = !isGameMaster && displayMode === 'shared';
 
-        // Disable button if already answered
-        if (playerAnswer !== null) {
-            button.disabled = true;
-            if (option === question.correctAnswer) {
-                button.classList.add('correct');
-            } else if (option === playerAnswer && option !== question.correctAnswer) {
-                button.classList.add('incorrect');
+    // If it's a player in shared screen mode, only show buttons (question is on GM screen)
+    if (isPlayerInSharedMode) {
+        questionTextElem.textContent = "Look at the Game Master's screen for the question!";
+    }
+
+    // Always render answer buttons if current user is not GM in shared mode or in individual mode
+    if (!isGameMaster || displayMode === 'individual') {
+        question.options.forEach(option => {
+            const button = document.createElement('button');
+            button.textContent = option;
+            button.className = 'answer-button w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg text-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50';
+            button.onclick = () => submitAnswer(option);
+
+            // Disable button if already answered
+            if (playerAnswer !== null) {
+                button.disabled = true;
+                if (option === question.correctAnswer) {
+                    button.classList.add('correct');
+                } else if (option === playerAnswer && option !== question.correctAnswer) {
+                    button.classList.add('incorrect');
+                }
             }
-        }
-        answersContainer.appendChild(button);
-    });
+            answersContainer.appendChild(button);
+        });
+    } else {
+        // If Game Master in shared mode, hide answer buttons on their control screen
+        answersContainer.innerHTML = '';
+    }
+
 
     if (playerAnswer !== null) {
         if (playerAnswer === question.correctAnswer) {
@@ -937,11 +934,11 @@ function displayQuestion(question, displayMode, players, currentPlayerId, questi
             feedbackArea.textContent = `Incorrect! Correct answer was: ${question.correctAnswer}`;
             feedbackArea.className = 'text-center mt-6 text-lg font-semibold text-red-600';
         }
-        // Disable answer buttons after submission
-        Array.from(answersContainer.children).forEach(btn => btn.disabled = true);
     } else {
-        // Ensure buttons are enabled if no answer submitted yet
-        Array.from(answersContainer.children).forEach(btn => btn.disabled = false);
+        // Ensure buttons are enabled if no answer submitted yet (only if they were rendered)
+        if (answersContainer.children.length > 0) {
+            Array.from(answersContainer.children).forEach(btn => btn.disabled = false);
+        }
     }
 }
 
@@ -972,6 +969,101 @@ function renderFinalLeaderboard(players) {
 }
 
 
+// --- Admin Functions (NEW) ---
+
+/**
+ * Adds a new answer option input field to the admin form.
+ */
+function addOptionInput() {
+    const div = document.createElement('div');
+    div.className = 'flex items-center space-x-2';
+    div.innerHTML = `
+        <input type="text" class="admin-option-input p-2 border border-gray-300 rounded-lg flex-grow focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50" placeholder="Option ${adminOptionsContainer.children.length + 1}">
+        <button class="remove-option-btn text-red-500 hover:text-red-700 text-2xl font-bold leading-none">&times;</button>
+    `;
+    adminOptionsContainer.appendChild(div);
+    // Add event listener for the new remove button
+    div.querySelector('.remove-option-btn').addEventListener('click', (e) => {
+        if (adminOptionsContainer.children.length > 2) { // Ensure at least 2 options remain
+            e.target.closest('.flex').remove();
+        } else {
+            displayAdminFeedback('Keep at least two options.', 'error');
+        }
+    });
+}
+
+/**
+ * Displays feedback messages on the admin page.
+ * @param {string} message The message to display.
+ * @param {string} type 'success' or 'error'.
+ */
+function displayAdminFeedback(message, type) {
+    adminFeedbackMessage.textContent = message;
+    adminFeedbackMessage.className = `text-sm font-semibold mb-4 text-center ${type === 'success' ? 'text-green-600' : 'text-red-600'}`;
+    setTimeout(() => {
+        adminFeedbackMessage.textContent = '';
+        adminFeedbackMessage.className = `text-sm font-semibold mb-4 text-center`;
+    }, 5000); // Clear message after 5 seconds
+}
+
+/**
+ * Clears all input fields in the admin question form.
+ */
+function clearAdminForm() {
+    adminQuestionText.value = '';
+    adminCorrectAnswer.value = '';
+    adminGameMode.value = 'adult'; // Reset to default
+
+    // Clear and reset options to just two default ones
+    adminOptionsContainer.innerHTML = '';
+    addOptionInput(); // Add first default
+    addOptionInput(); // Add second default
+    adminOptionsContainer.querySelectorAll('.remove-option-btn').forEach(btn => btn.style.display = 'inline-block'); // Ensure remove buttons are visible
+}
+
+/**
+ * Handles the submission of a new question from the admin form.
+ */
+async function submitNewQuestion() {
+    const questionText = adminQuestionText.value.trim();
+    const correctAnswer = adminCorrectAnswer.value.trim();
+    const mode = adminGameMode.value;
+
+    const optionInputs = Array.from(adminOptionsContainer.querySelectorAll('.admin-option-input'));
+    const options = optionInputs.map(input => input.value.trim()).filter(value => value !== '');
+
+    // Basic validation
+    if (!questionText || !correctAnswer || options.length < 2) {
+        displayAdminFeedback('Please fill all fields and provide at least two options.', 'error');
+        return;
+    }
+
+    if (!options.includes(correctAnswer)) {
+        displayAdminFeedback('The correct answer must be one of the provided options.', 'error');
+        return;
+    }
+
+    // Create the question object
+    const newQuestion = {
+        question: questionText,
+        options: options,
+        correctAnswer: correctAnswer,
+        mode: mode,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp() // Timestamp for ordering
+    };
+
+    try {
+        // Save the new question to the top-level 'questions' collection
+        await db.collection('questions').add(newQuestion);
+        displayAdminFeedback('Question added successfully!', 'success');
+        clearAdminForm(); // Clear form after successful submission
+    } catch (error) {
+        console.error("Error adding new question:", error);
+        displayAdminFeedback('Failed to add question: ' + error.message, 'error');
+    }
+}
+
+
 // --- Event Listeners ---
 googleSignInBtn.addEventListener('click', signInWithGoogle);
 emailSignUpBtn.addEventListener('click', signUpWithEmail);
@@ -998,5 +1090,29 @@ returnHomeBtn.addEventListener('click', () => {
     applyTheme('neutral');
 });
 
+// Admin Event Listeners (NEW)
+goToAdminBtn.addEventListener('click', () => {
+    if (currentUser) {
+        showSection(adminSection);
+        applyTheme('neutral'); // Admin page is neutral theme
+        clearAdminForm(); // Initialize form with two empty options
+    } else {
+        alert("You must be logged in to access the Admin page.");
+        showSection(authSection); // Redirect to auth if not logged in
+    }
+});
+backToHomeFromAdminBtn.addEventListener('click', () => {
+    showSection(authSection);
+    applyTheme('neutral');
+});
+addOptionBtn.addEventListener('click', addOptionInput);
+submitQuestionBtn.addEventListener('click', submitNewQuestion);
+
+
 // Initial check for auth token and then sign in anonymously if needed
 checkInitialAuthToken();
+
+// Initialize the admin form with two options on load
+document.addEventListener('DOMContentLoaded', () => {
+    clearAdminForm(); // Ensure the admin form is correctly initialized on page load
+});

@@ -40,6 +40,7 @@
                     <input type="text" id="player-name-input" placeholder="Enter Your Name" class="p-3 border border-gray-300 rounded-lg w-full mb-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">
                     <button id="join-game-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg w-full text-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">Join Existing Game</button>
                 </div>
+                <button id="go-to-admin-btn" class="bg-gray-700 hover:bg-gray-800 text-white font-bold py-2 px-4 rounded-lg w-full text-md mt-4 focus:outline-none focus:ring-2 focus:ring-gray-700 focus:ring-opacity-50">Admin: Add Questions</button>
             </div>
         </div>
 
@@ -105,6 +106,50 @@
                 </ul>
             <button id="play-again-btn" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg text-lg mr-4">Play Again</button>
             <button id="return-home-btn" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-6 rounded-lg text-lg">Return Home</button>
+        </div>
+
+        <div id="admin-section" class="hidden bg-white p-8 rounded-lg shadow-xl w-full max-w-2xl text-left transition-opacity duration-500 ease-in-out opacity-0 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+            <h2 class="text-3xl font-bold mb-6 text-gray-800 text-center">Admin: Add New Question</h2>
+
+            <div class="mb-4">
+                <label for="admin-question-text" class="block text-lg font-medium text-gray-700 mb-2">Question Text:</label>
+                <textarea id="admin-question-text" class="p-3 border border-gray-300 rounded-lg w-full resize-y focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50" rows="3" placeholder="Enter the quiz question"></textarea>
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-lg font-medium text-gray-700 mb-2">Answer Options (at least 2):</label>
+                <div id="admin-options-container" class="space-y-3">
+                    <div class="flex items-center space-x-2">
+                        <input type="text" class="admin-option-input p-2 border border-gray-300 rounded-lg flex-grow focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50" placeholder="Option 1">
+                        <button class="remove-option-btn text-red-500 hover:text-red-700 text-2xl font-bold leading-none">&times;</button>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <input type="text" class="admin-option-input p-2 border border-gray-300 rounded-lg flex-grow focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50" placeholder="Option 2">
+                        <button class="remove-option-btn text-red-500 hover:text-red-700 text-2xl font-bold leading-none">&times;</button>
+                    </div>
+                </div>
+                <button id="add-option-btn" class="mt-3 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-50">Add Option</button>
+            </div>
+
+            <div class="mb-4">
+                <label for="admin-correct-answer" class="block text-lg font-medium text-gray-700 mb-2">Correct Answer:</label>
+                <input type="text" id="admin-correct-answer" class="p-3 border border-gray-300 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50" placeholder="Enter the exact correct answer">
+            </div>
+
+            <div class="mb-6">
+                <label for="admin-game-mode" class="block text-lg font-medium text-gray-700 mb-2">Game Mode:</label>
+                <select id="admin-game-mode" class="p-3 border border-gray-300 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50">
+                    <option value="adult">Adult Mode</option>
+                    <option value="kids">Kids Mode</option>
+                </select>
+            </div>
+
+            <p id="admin-feedback-message" class="text-sm font-semibold mb-4 text-center"></p>
+
+            <div class="flex justify-between space-x-4">
+                <button id="submit-question-btn" class="flex-grow bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg text-lg focus:outline-none focus:ring-2 focus:ring-green-600 focus:ring-opacity-50">Add Question</button>
+                <button id="back-to-home-from-admin-btn" class="flex-grow bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-6 rounded-lg text-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50">Back to Home</button>
+            </div>
         </div>
 
     </div>
