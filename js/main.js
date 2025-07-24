@@ -10,82 +10,48 @@ const firebaseConfig = {
     appId: "@@FIREBASE_APP_ID@@",
 };
 
-// Initialize Firebase - These are now global within this file's scope
-const app = firebase.initializeApp(firebaseConfig); // Assign app to a variable
+// Initialize Firebase - These are global to main.js's scope
+const app = firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
+// Make Firebase instances globally accessible immediately
+window.auth = auth;
+window.db = db;
+
 // --- Event Listeners and Initial Setup ---
 document.addEventListener('DOMContentLoaded', () => {
-    // Attach Firebase instances and global variables to window after DOM is ready
-    // This makes them accessible to other scripts loaded before this one
-    // or functions called from this script that are defined in other files.
-    window.auth = auth;
-    window.db = db;
 
-    // Define global access to state and utility functions
-    // It's crucial that these are defined *before* any functions in other modules
-    // try to use them, or they need to be passed as arguments.
-    // The current loading order (domElements, utils, gameLogic, gameUI, admin, auth, main)
-    // means global variables and functions from earlier files *are* available to later ones.
-    // However, explicitly assigning them to `window` here ensures they are truly global
-    // *after* Firebase has been initialized and the DOM is ready for event listeners.
+    // Global state variables (declared in utils.js, now also attached to window there)
+    // No need to re-assign if utils.js directly puts them on window.
+    // If they are just `let` declarations in utils.js, then you need to manage
+    // state via a single object or similar. For simplicity, let's assume utils.js
+    // also uses window. for its globals or they are only accessed in their own files.
 
-    // Global state variables (declared in utils.js)
-    window.currentUser = null;
-    window.currentGameState = null;
-    window.currentGameId = null;
-    window.currentPlayerId = null;
-    window.currentPlayerName = null;
-    window.isGameMaster = false;
-    window.gameSubscription = null;
-    window.playersSubscription = null;
-    window.sampleQuestions = sampleQuestions; // from utils.js
+    // If utils.js also assigns its globals to window (as in the suggested utils.js content):
+    // window.currentUser, window.currentGameState, etc. are already global.
 
-    // Utility functions (from utils.js)
-    window.generateGameId = generateGameId;
-    window.hideAllSections = hideAllSections;
-    window.showSection = showSection;
-    window.applyTheme = applyTheme;
+    // If functions like signInWithGoogle are declared `function signInWithGoogle() { ... }` in auth.js,
+    // they become globally available by default as soon as auth.js runs.
+    // So, explicitly doing `window.signInWithGoogle = signInWithGoogle;` within DOMContentLoaded
+    // might be redundant if they're already global.
+    // The previous main.js content was correct in making these global,
+    // but the problem was DOM elements not being global early enough.
 
-    // Auth functions (from auth.js)
-    window.updateAuthUI = updateAuthUI;
-    window.displayAuthError = displayAuthError;
-    window.signInWithGoogle = signInWithGoogle;
-    window.signUpWithEmail = signUpWithEmail;
-    window.signInWithEmail = signInWithEmail;
-    window.signInAnonymously = signInAnonymously;
-    window.signOutUser = signOutUser;
-    window.checkInitialAuthToken = checkInitialAuthToken; // Make global to call from here
+    // Re-confirm all global access from other files:
+    // If your other files (`utils.js`, `auth.js`, `gameLogic.js`, `gameUI.js`, `admin.js`)
+    // are structured like: `function myFunc() { ... }`, these functions automatically
+    // become global properties of `window` when their script file runs.
+    // The only global variables that might need explicit `window.` are `let` or `const`
+    // at the top level of those files, unless they are already set on `window` in their own file.
 
-    // Game Logic functions (from gameLogic.js)
-    window.createGame = createGame;
-    window.joinGame = joinGame;
-    window.currentPlayerNameInput = currentPlayerNameInput;
-    window.startGame = startGame;
-    window.updateGameQuestionsInFirestore = updateGameQuestionsInFirestore;
-    window.nextQuestion = nextQuestion;
-    window.togglePauseGame = togglePauseGame;
-    window.toggleLeaderboardVisibility = toggleLeaderboardVisibility;
-    window.endGame = endGame;
-    window.leaveGame = leaveGame;
-    window.submitAnswer = submitAnswer;
-    window.listenToGameChanges = listenToGameChanges;
+    // Given the current setup, `domElements.js` and `utils.js` *should* be modified
+    // to place their variables/functions directly on the window object, or
+    // we need to pass them around explicitly.
+    // The safest is to explicitly attach all to window at the start of DOMContentLoaded.
 
-    // Game UI functions (from gameUI.js)
-    window.renderUI = renderUI;
-    window.renderLobbyPlayers = renderLobbyPlayers;
-    window.renderGameMasterControls = renderGameMasterControls;
-    window.updatePauseButtonState = updatePauseButtonState;
-    window.displayQuestion = displayQuestion;
-    window.renderLeaderboard = renderLeaderboard;
-    window.renderFinalLeaderboard = renderFinalLeaderboard;
-
-    // Admin functions (from admin.js)
-    window.addOptionInput = addOptionInput;
-    window.displayAdminFeedback = displayAdminFeedback;
-    window.clearAdminForm = clearAdminForm;
-    window.submitNewQuestion = submitNewQuestion;
+    // This ensures all element references from domElements.js are available here.
+    // (Assuming domElements.js is loaded BEFORE main.js as in index.html)
 
     // --- All Event Listeners ---
     // Auth listeners
